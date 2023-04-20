@@ -1,0 +1,6 @@
+html {
+  background-color: gray;
+  /* https://www.transparenttextures.com/ */
+  background-image: url("../public/brushed-alum.png");
+  height: 100%;
+}

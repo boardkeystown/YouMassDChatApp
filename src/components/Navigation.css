@@ -1,0 +1,36 @@
+.navbar_main {
+    background-color: #0417c2;
+    width: 100%;
+}
+.navbar_links > .nav-link {
+    color: #f0b802;
+    display: flex;
+    align-items: center;
+    
+}
+.navbar_links_effect:hover.nav-link {
+    color:rgb(226, 226, 226);
+    transition: color 0.5s ease;
+}
+
+.drop>.btn-primary{
+    color:#f0b802 !important;
+    background-color:#0417c2!important;
+    border: none;
+}
+
+.drop:hover .btn-primary{
+    color: aliceblue;
+    transition:color 0.5s ease;
+}
+
+
+.dropdown-menu{
+    background-color: #0417c2;
+    border-color: white;
+    position: left;    
+}
+
+.dropdown-item{
+    color: #f0b802;
+}

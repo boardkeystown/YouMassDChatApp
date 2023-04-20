@@ -1,0 +1,52 @@
+.about_container{
+    color: #0417c2;
+    background-color: white;
+    border-style: solid;
+    border: 0.2rem outset rgb(195, 195, 195);
+    border-color: #808080;
+}
+.about_paragraph {
+    /* background-color: #0417c2; */
+    /* color: #f0b802; */
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    color: #333;
+    line-height: 1.5;
+
+    margin-top: 0.5rem;
+    margin-left: 1rem;
+    margin-right: 1rem;
+    margin-bottom: 0.5rem;
+
+    padding-top: 0rem;
+    padding-left: 0.1rem;
+    padding-right: 0.1rem;
+    padding-bottom: 0rem;
+}
+
+.about_h1 {
+    margin-top: 0.2rem;
+    margin-left: 1rem;
+    margin-right: 1rem;
+    text-align: center;
+}
+.about_welcome {
+    background-color: #0417c2;
+    color: #f0b802;
+    font-size: 20px;
+    border-radius: 0.05rem;
+    padding: 0.1rem;
+}
+
+/* youmassd text colors */
+.about_ytc {
+    color: #f0b802;
+    text-shadow: #0417c2 2px 1px 1px,
+                 #333 2px 1px 2px,
+                 black 2px 1px 2px;
+}
+
+.about_em {
+    background-color: #0417c2;
+    color: #f0b802;
+}

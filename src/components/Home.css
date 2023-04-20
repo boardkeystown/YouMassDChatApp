@@ -1,0 +1,26 @@
+.home_main{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.home_bg {
+    color: #0417c2;
+    background-color: white;
+    border-style: solid;
+    border: 0.2rem outset rgb(195, 195, 195);
+    border-color: #808080;
+}
+
+.title{
+
+    background-color: #0417c2;
+    color: #f0b802;
+    margin-top: 0.2rem;
+    padding: 0.1rem;
+}
+.error{
+    color: #f0b802;
+    font-size: 120px;
+}
