@@ -3,6 +3,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import Message from './Message';
 
 import { Container, Col, Form, Button } from 'react-bootstrap';
+import Compressor from 'compressorjs';
+
 import io from "socket.io-client";
 
 import './Chat.css';
@@ -30,7 +32,7 @@ const API_URL = (DEPLOY_MODE === true) ?
     process.env.REACT_APP_DEPLOY_API_URL :
     process.env.REACT_APP_DEV_API_URL;
 
-export default function Chat({boardTitle, boardRoute,updateSessionFunc}) {
+export default function Chat({ boardTitle, boardRoute, updateSessionFunc }) {
     const chatAutoScrollRef = useRef(null);
     const socket = useRef(null);
     // Flag to track if connection is already established
@@ -38,16 +40,16 @@ export default function Chat({boardTitle, boardRoute,updateSessionFunc}) {
     const useBoardRouteRef = useRef(boardRoute)
 
     const [rerender, setRerender] = useState(new Date().toLocaleString());
+    const [currentFileType, setCurrentFileType] = useState(null);
 
-    
-    const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8 MB
+    const MAX_FILE_SIZE = 4 * 1024 * 1024; // 5 MB
     const [fileSizeError, setError] = useState(null);
 
     useEffect(() => {
         if (!isConnectedRef.current) {
-            useBoardRouteRef.current = (useBoardRouteRef.current===undefined) ? "" : useBoardRouteRef.current;
-            console.log("Connection to server:" + API_URL + useBoardRouteRef.current);
-            socket.current = io.connect( API_URL + useBoardRouteRef.current);
+            useBoardRouteRef.current = (useBoardRouteRef.current === undefined) ? "" : useBoardRouteRef.current;
+            // console.log("Connection to server:" + API_URL + useBoardRouteRef.current);
+            socket.current = io.connect(API_URL + useBoardRouteRef.current);
             // Set flag to true to indicate connection is established
             isConnectedRef.current = true;
         }
@@ -68,7 +70,7 @@ export default function Chat({boardTitle, boardRoute,updateSessionFunc}) {
         //get data from the form values
         const formData = new FormData(eventData.target);
         const formDataObj = Object.fromEntries(formData.entries());
-        console.log(formDataObj)
+        // console.log(formDataObj)
 
         //Set up data to be sent
         let username = formDataObj.username;
@@ -79,20 +81,19 @@ export default function Chat({boardTitle, boardRoute,updateSessionFunc}) {
 
         if (fileSizeError) {
             window.alert(fileSizeError);
-            Array.from(eventData.target).forEach((e) => 
-                {   
-                    // console.log(e.name + ': ' + e.value);
-                    // console.log(e);
-                    if (e.name === "imageData") {
-                        e.value="";
-                        setError(null);
-                    }
-                    return (e.value)
-                }    
-                );
+            Array.from(eventData.target).forEach((e) => {
+                // console.log(e.name + ': ' + e.value);
+                // console.log(e);
+                if (e.name === "imageData") {
+                    e.value = "";
+                    setError(null);
+                }
+                return (e.value)
+            }
+            );
             return;
         }
-        if (message_text === "" && postURL===""){
+        if (message_text === "" && postURL === "") {
             window.alert("Theres no message to send");
             return;
         }
@@ -106,6 +107,7 @@ export default function Chat({boardTitle, boardRoute,updateSessionFunc}) {
         //get the image converted to base64
         // TODO: Validate that it is correct type
         // probably should not send stuff if wrong type
+        const file = formDataObj.imageData;
         const readFileAsBase64 = (file) => {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -119,20 +121,41 @@ export default function Chat({boardTitle, boardRoute,updateSessionFunc}) {
             });
         };
         if (postURL !== "") {
-            const file = formDataObj.imageData;
-            readFileAsBase64(file).then((data) => {
-                // Use the base64Data here once the file is done reading
-                // console.log(data.dataURL);
-                message_data.base64Data = data.dataURL;
-                // messagesRef.current = [...messagesRef.current, message_data];
-                // setMessages([...messagesRef.current]);
-                socket.current.emit("send_message", message_data);
-            });
+            if (currentFileType === "image/png" ||
+                currentFileType === "image/webp" ||
+                currentFileType === "image/jpeg") {
+                const comprer = new Compressor(file, {
+                    quality: 0.6,
+                    success: (compressedResult) => {
+                        readFileAsBase64(compressedResult).then((data) => {
+                            const dataURL = data.dataURL;
+                            message_data.base64Data = dataURL;
+                            // console.log(message_data.base64Data);
+                            // console.log(message_data);
+                            socket.current.emit("send_message", message_data);
+                        }).catch((error) => {
+                            console.log(error);
+                        })
+                    },
+                    error: (error) => {
+                        console.error(error);
+                    },
+                });
+            } else {
+                // console.log(message_data);
+                readFileAsBase64(file).then((data) => {
+                    // Use the base64Data here once the file is done reading
+                    // console.log(data.dataURL);
+                    message_data.base64Data = data.dataURL;
+                    socket.current.emit("send_message", message_data);
+                }).catch((error) => {
+                    console.log(error);
+                });
+            }
         } else {
-            // messagesRef.current = [...messagesRef.current, message_data];
-            // setMessages([...messagesRef.current]);
             socket.current.emit("send_message", message_data);
         }
+
         //Clear values and set back to defaults!!!!
         Array.from(eventData.target).forEach((e) => (e.value = ""));
         eventData.target[0].value = (username === "") ? "Anon" : username;
@@ -154,9 +177,8 @@ export default function Chat({boardTitle, boardRoute,updateSessionFunc}) {
         });
     }, []);
     const forceUpdateHandel = () => {
-        socket.current.emit("send_message_force_update", {messages:"force update!"});
+        socket.current.emit("send_message_force_update", { messages: "force update!" });
     }
-
 
     useEffect(() => {
         // Scroll to the bottom of the chat container when component updates
@@ -164,18 +186,18 @@ export default function Chat({boardTitle, boardRoute,updateSessionFunc}) {
 
         const messageBoxElement = document.querySelector('#MessageBox');
         const handleWindowResize = () => {
-          chatAutoScrollRef.current.scrollTop = chatAutoScrollRef.current.scrollHeight;
+            chatAutoScrollRef.current.scrollTop = chatAutoScrollRef.current.scrollHeight;
         }
         messageBoxElement.addEventListener('DOMSubtreeModified', handleWindowResize);
         return () => {
-          messageBoxElement.removeEventListener('DOMSubtreeModified', handleWindowResize);
+            messageBoxElement.removeEventListener('DOMSubtreeModified', handleWindowResize);
         }
-    }, [messages])
+    }, [])
 
-    useEffect(()=>{
+    useEffect(() => {
         // resize the chat within the window
         const footerOffset = 30; //in px
-        
+
         const navBarElement = document.querySelector('#NavBar');
         const navBarHeight = navBarElement.offsetHeight;
 
@@ -188,16 +210,16 @@ export default function Chat({boardTitle, boardRoute,updateSessionFunc}) {
         const submitFormElement = document.querySelector('#SubmitForm');
         const submitFormHeight = submitFormElement.offsetHeight;
 
-        let updatedAvailableHeight = 
-        ((window.innerHeight - (messageBoxHeight + submitFormHeight + 
-            navBarHeight+boardTitleHeight))+messageBoxHeight)-footerOffset
+        let updatedAvailableHeight =
+            ((window.innerHeight - (messageBoxHeight + submitFormHeight +
+                navBarHeight + boardTitleHeight)) + messageBoxHeight) - footerOffset
         chatAutoScrollRef.current.style.height = `${updatedAvailableHeight}px`;
 
         const handleWindowResize = () => {
             // Update the height of chat_messages_display on window resize
-            updatedAvailableHeight = ((window.innerHeight - (messageBoxHeight + 
-                            submitFormHeight + navBarHeight+boardTitleHeight))+
-                            messageBoxHeight)-footerOffset
+            updatedAvailableHeight = ((window.innerHeight - (messageBoxHeight +
+                submitFormHeight + navBarHeight + boardTitleHeight)) +
+                messageBoxHeight) - footerOffset
             chatAutoScrollRef.current.style.height = `${updatedAvailableHeight}px`;
         }
         // Add event listener for window resize
@@ -206,7 +228,7 @@ export default function Chat({boardTitle, boardRoute,updateSessionFunc}) {
         return () => {
             window.removeEventListener('resize', handleWindowResize);
         }
-    },[messages])
+    }, [])
 
     // function mk_test() {
     //     let sd = sessionStorage.getItem('sessionData') ? JSON.parse(sessionStorage.getItem('sessionData')) : undefined
@@ -215,11 +237,14 @@ export default function Chat({boardTitle, boardRoute,updateSessionFunc}) {
     const handleFileChange = (event) => {
         const file = event.target.files[0];
         if (file && file.size > MAX_FILE_SIZE) {
-          setError('File too large! Max Size 8MB');
+            setError('File too large! Max Size 4MB');
         } else {
-          setError(null);
+            setError(null);
+            //TODO: check if file.type is not image/png , image/gif , or image/png
+            // console.log(file.type)
+            setCurrentFileType(file.type);
         }
-      };
+    };
 
     return (
         <Container>
@@ -228,12 +253,13 @@ export default function Chat({boardTitle, boardRoute,updateSessionFunc}) {
                 <div className='main_chat_container chat_messages_display' ref={chatAutoScrollRef} id="MessageBox">
                     {
                         messages.map((m, i) => {
-                            return (<div key={i}><Message 
-                                                 data={m} 
-                                                 boardRoute={boardRoute}
-                                                 forcedUpdateSignalFunc={forceUpdateHandel}
-                                                 updateSessionFunc={updateSessionFunc}
-                                                 ></Message></div>)
+                            return (<div key={i}><Message
+                                data={m}
+                                boardRoute={boardRoute}
+                                forcedUpdateSignalFunc={forceUpdateHandel}
+                                updateSessionFunc={updateSessionFunc}
+                                forceUpdate={rerender}
+                            ></Message></div>)
                         })
                     }
                 </div>
@@ -245,13 +271,13 @@ export default function Chat({boardTitle, boardRoute,updateSessionFunc}) {
                             placeholder='Anonymous'
                             defaultValue="Anonymous" />
                         <Button
-                            id="btn-primary" 
+                            id="btn-primary"
                             className="btn btn-primary btn-large centerButton col-2"
                             type="submit">Post!</Button>
                     </Form.Group>
                     <Form.Group className='d-flex align-items-center'>
                         <Form.Label className='col-2 text-center'>Comment</Form.Label>
-                        <Form.Control 
+                        <Form.Control
                             id="message_border"
                             name='message_text'
                             type="text"
@@ -260,17 +286,17 @@ export default function Chat({boardTitle, boardRoute,updateSessionFunc}) {
                             rows={2} />
                     </Form.Group>
                     <Form.Group className='d-flex align-items-center'>
-                    <Form.Label className='col-2 text-center '> Image: </Form.Label>
-                    <Form.Control 
-                        className='rad-fix-corner'
-                        name='imageData'
-                        type="file"
-                        accept="image/png, image/jpeg, image/gif"
-                        placeholder={undefined}
-                        onChange={handleFileChange}
+                        <Form.Label className='col-2 text-center '> Image: </Form.Label>
+                        <Form.Control
+                            className='rad-fix-corner'
+                            name='imageData'
+                            type="file"
+                            accept="image/png, image/jpeg, image/gif, image/webp"
+                            placeholder={undefined}
+                            onChange={handleFileChange}
                         />
-                    {fileSizeError && <Form.Text className="text-danger">{fileSizeError}</Form.Text>}
-                  </Form.Group>
+                        {fileSizeError && <Form.Text className="text-danger">{fileSizeError}</Form.Text>}
+                    </Form.Group>
                 </Form>
             </Col>
         </Container>

@@ -35,7 +35,7 @@ function Navigation({ sessionData,clearSessionFunc }) {
     return (
         <Navbar  id="NavBar" className='navbar_main'>
             <Container>
-                <Navbar.Brand href="Home">
+                <Navbar.Brand href="/Home">
                     <img
                         src={require("../assets/Arnie.png")}
                         width="50"
@@ -45,9 +45,9 @@ function Navigation({ sessionData,clearSessionFunc }) {
                     />
                 </Navbar.Brand>
                 <Nav className='navbar_links'>
-                    <Nav.Link className='navbar_links_effect' href="Home">Home</Nav.Link>
-                    <Nav.Link className='navbar_links_effect' href="Boards">Board</Nav.Link>
-                    <Nav.Link className='navbar_links_effect' href="About">About</Nav.Link>
+                    <Nav.Link className='navbar_links_effect' href="/Home">Home</Nav.Link>
+                    <Nav.Link className='navbar_links_effect' href="/Boards">Board</Nav.Link>
+                    <Nav.Link className='navbar_links_effect' href="/About">About</Nav.Link>
                     {mk_logindropdown(sessionData,clearSessionFunc)}
                 </Nav>
             </Container>

@@ -1,5 +1,5 @@
 // message component to be rendered in message box
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import { Card, Image, Button } from 'react-bootstrap';
 import "./Message.css"
 
@@ -23,39 +23,6 @@ function mk_image(imageData) {
     )
 }
 
-// function get_messageData(messageID) {
-//    fetch(API_URL+"/api/get_message", {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json'
-//         },
-//         body: JSON.stringify({ messageID: messageID })
-//       })
-//       .then(response => {
-//         if (response.status === 201) {
-//           // Handle success with status code 201
-//           return response.json();
-//         } else if (response.status === 202) {
-//           // Handle not found with status code 404
-//           throw new Error("Message not found");
-//         } else {
-//           // Handle other status codes
-//           throw new Error("Unexpected response status code: " + response.status);
-//         }
-//       })
-//       .then(data => {
-//         // Handle response data for success
-//         console.log("DATA FROM SERVER")
-//         console.log(data);
-//         console.log("DATA FROM SERVER")
-//         return data;
-//       })
-//       .catch(error => {
-//         // Handle error
-//         console.log(error);
-//         return error;
-//       });
-//   }
 async function get_messageData(messageID,boardRoute) {
   try {
     const response = await fetch(API_URL + "/api/get_message", {
@@ -120,12 +87,12 @@ function janny_tools(messageID,
         return response.json(); // Parse the response body as JSON
       })
       .then(data => {
-        console.log(data);
+        // console.log(data);
         // TODO: we now send signal to update messages
 
         // update the new accesses token if need be
         if (data.newAccessToken!==undefined) {
-          console.log("I WAS GIVEN NEW TOKEN",data.newAccessToken)
+          // console.log("I WAS GIVEN NEW TOKEN",data.newAccessToken)
           updateSessionFunc({accessToken: data.newAccessToken, 
                             username: sd.username})
         }
@@ -154,7 +121,7 @@ function janny_tools(messageID,
 }
 
 
-function Message({ data, boardRoute,forcedUpdateSignalFunc,updateSessionFunc}) {
+function Message({ data, boardRoute,forcedUpdateSignalFunc,updateSessionFunc,forceUpdate}) {
   // const username = data.username || "Anon";
   // const date = data.date_sent || "ERROR";
   // const time = data.date_time || "ERROR";
@@ -185,9 +152,13 @@ function Message({ data, boardRoute,forcedUpdateSignalFunc,updateSessionFunc}) {
       setImageData(msgData.base64Data || undefined)
     }
   }
-  if (data.messageID) {
-    getMessageData(data.messageID);
-  }
+
+  useEffect(() => {
+    if (data.messageID) {
+      getMessageData(data.messageID);
+    }
+  },[forceUpdate])
+
   return (
     <Card className='message_card'>
       <Card.Title className='message_title'>
